@@ -1,14 +1,14 @@
 {
-  "name": "zero-to-prod/:slug",
-  "description": ":description",
+  "name": "zero-to-prod/factory",
+  "description": "A Generic Factory Pattern for Creating Arrays.",
   "license": "MIT",
   "type": "library",
   "keywords": [
     "zero-to-prod",
-    ":slug"
+    "factory"
   ],
   "readme": "./README.md",
-  "time": ":time",
+  "time": "2025-02-15",
   "authors": [
     {
       "name": "David Smith",
@@ -17,13 +17,13 @@
       "role": "maintainer"
     }
   ],
-  "homepage": "https://github.com/zero-to-prod/:slug",
+  "homepage": "https://github.com/zero-to-prod/factory",
   "support": {
     "email": "dave0016@gmail.com",
-    "issues": "https://github.com/zero-to-prod/:slug/issues",
-    "source": "https://github.com/zero-to-prod/:slug",
-    "docs": "https://zero-to-prod.github.io/:slug/",
-    "security": "https://github.com/zero-to-prod/:slug/blob/main/SECURITY.md"
+    "issues": "https://github.com/zero-to-prod/factory/issues",
+    "source": "https://github.com/zero-to-prod/factory",
+    "docs": "https://zero-to-prod.github.io/factory/",
+    "security": "https://github.com/zero-to-prod/factory/blob/main/SECURITY.md"
   },
   "funding": [
     {
@@ -32,22 +32,20 @@
     }
   ],
   "require": {
-    "php": ">=7.1"
+    "php": ">=7.1",
+    "zero-to-prod/arr": "^1.1"
   },
   "require-dev": {
     "phpunit/phpunit": "<12.0"
   },
   "autoload": {
     "psr-4": {
-      "Zerotoprod\\:namespace\\": "src/"
+      "Zerotoprod\\Factory\\": "src/"
     }
   },
   "autoload-dev": {
     "psr-4": {
       "Tests\\": "tests/"
     }
-  },
-  "bin": [
-    "bin/:slug"
-  ]
+  }
 }
