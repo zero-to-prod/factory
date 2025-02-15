@@ -174,20 +174,22 @@ trait Factory
     /**
      * Mutate the context before instantiating the class.
      *
+     * Alias for state().
+     *
      * ```
      *   public function setValue($value): self
      *   {
-     *        return $this->state('value.nested', $value);
+     *        return $this->set('value.nested', $value);
      *   }
      *
      *  public function setValue($value): self
      *  {
-     *       return $this->state(['value' => $value]);
+     *       return $this->set(['value' => $value]);
      *  }
      *
      *  public function setValueWithClosure($value): self
      *  {
-     *      return $this->state(function ($context) use ($value) {
+     *      return $this->set(function ($context) use ($value) {
      *          return ['value' => $value];
      *      });
      *  }
