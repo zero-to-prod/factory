@@ -119,8 +119,9 @@ trait Factory
      * Merge the definition with the context.
      *
      * @link https://github.com/zero-to-prod/factory
+     * @return array<string, mixed>
      */
-    public function resolve(): array
+    public function resolve()
     {
         return array_merge($this->definition(), $this->context);
     }
