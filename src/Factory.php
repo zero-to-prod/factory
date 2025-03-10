@@ -120,7 +120,7 @@ trait Factory
      *
      * @link https://github.com/zero-to-prod/factory
      */
-    private function resolve()
+    public function resolve()
     {
         return array_merge($this->definition(), $this->context);
     }
