@@ -84,9 +84,9 @@ class UserFactory
     }
     
     /* Optionally implement for better static analysis */
-    public function make(): array
+    public function make(array $context = []): array
     {
-        return $this->resolve();
+        return $this->resolve($context);
     }
 }
 
