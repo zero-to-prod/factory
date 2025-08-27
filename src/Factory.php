@@ -24,9 +24,9 @@ use Zerotoprod\Arr\Arr;
  *          return $this->state(['last_name' => 'Doe']);
  *      }
  *
- *      public function make(): array
+ *      public function make(array $context = []): array
  *      {
- *          return $this->resolve();
+ *          return $this->resolve($context);
  *      }
  *
  *      public static function factory(array $context = []): self
@@ -120,9 +120,9 @@ trait Factory
      *
      * @link https://github.com/zero-to-prod/factory
      */
-    private function resolve()
+    private function resolve(array $context = [])
     {
-        return array_merge($this->definition(), $this->context);
+        return array_merge(array_merge($this->definition(), $this->context), $context);
     }
 
     /**
@@ -130,9 +130,9 @@ trait Factory
      *
      * @link https://github.com/zero-to-prod/factory
      */
-    public function make()
+    public function make(array $context = [])
     {
-        return $this->resolve();
+        return $this->resolve($context);
     }
 
     /**
