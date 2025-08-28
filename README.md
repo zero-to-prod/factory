@@ -18,9 +18,16 @@
 - [Requirements](#requirements)
 - [Installation](#installation)
 - [Usage](#usage)
+  - [Basic Factory Pattern](#basic-factory-pattern)
+  - [Model-Based Factory Pattern](#model-based-factory-pattern)
+  - [Custom Factory Methods](#custom-factory-methods)
+  - [Advanced Factory Features](#advanced-factory-features)
+  - [Callable State (Closures)](#callable-state-closures)
   - [The `set()` Method](#the-set-method)
   - [The `merge()` Method](#the-merge-method)
   - [The `context()` Method](#the-context-method)
+  - [Context Priority](#context-priority)
+  - [The `make()` Method](#the-make-method)
 - [Local Development](./LOCAL_DEVELOPMENT.md)
 - [Contributing](#contributing)
 
@@ -43,6 +50,140 @@ composer require zero-to-prod/factory
 This will add the package to your project’s dependencies and create an autoloader entry for it.
 
 ## Usage
+
+### Basic Factory Pattern
+
+The simplest factory implementation requires only the `Factory` trait and a `definition()` method:
+
+```php
+class UserFactory
+{
+    use \Zerotoprod\Factory\Factory;
+
+    protected function definition(): array
+    {
+        return [
+            'first_name' => 'John',
+            'last_name' => 'N/A'
+        ];
+    }
+    
+    public static function factory(array $context = []): self
+    {
+        return new self($context);
+    }
+}
+
+// Create an array with default values
+$user = UserFactory::factory()->make();
+echo $user['first_name']; // 'John'
+echo $user['last_name'];  // 'N/A'
+
+// Override specific values
+$user = UserFactory::factory(['last_name' => 'Doe'])->make();
+echo $user['first_name']; // 'John' 
+echo $user['last_name'];  // 'Doe'
+```
+
+### Model-Based Factory Pattern
+
+You can add a static `factory()` method to your model classes for more convenient usage:
+
+```php
+class User
+{
+    public const first_name = 'first_name';
+    public $first_name;
+    
+    public static function factory(array $context = []): UserFactory
+    {
+        return new UserFactory($context);
+    }
+}
+
+class UserFactory
+{
+    use \Zerotoprod\Factory\Factory;
+
+    protected function definition(): array
+    {
+        return [
+            User::first_name => 'John'
+        ];
+    }
+}
+
+// Call factory directly from the model
+$user = User::factory()->make();
+echo $user['first_name']; // 'John'
+
+// Pass context to make() method
+$user = User::factory()->make([User::first_name => 'Jane']);
+echo $user['first_name']; // 'Jane'
+```
+
+### Custom Factory Methods
+
+Create custom methods in your factory to provide a fluent, expressive interface for setting specific values. These methods use the `state()` method internally to modify the factory context.
+
+```php
+class UserFactory
+{
+    use \Zerotoprod\Factory\Factory;
+
+    protected function definition(): array
+    {
+        return [
+            'first_name' => 'John',
+            'last_name' => 'N/A',
+            'address' => [
+                'street' => '123 Main St',
+            ],
+            'shipping_address' => [
+                'street' => '123 Main St',
+            ]
+        ];
+    }
+
+    // Simple field setting with array syntax
+    public function setFirstName(string $value): self
+    {
+        return $this->state(['first_name' => $value]);
+    }
+
+    // Nested field setting with dot notation
+    public function setAddress(string $street): self
+    {
+        return $this->state('address.street', $street);
+    }
+
+    // Complete array replacement
+    public function setShippingAddress(array $address): self
+    {
+        return $this->state('shipping_address', $address);
+    }
+
+    public static function factory(array $context = []): self
+    {
+        return new self($context);
+    }
+}
+
+// Usage examples
+$user = User::factory()
+    ->setFirstName('Jim')          // Sets first_name to 'Jim'
+    ->setAddress('bogus')          // Sets address.street to 'bogus'
+    ->setShippingAddress(['city' => 'NYC']) // Replaces entire shipping_address
+    ->make();
+
+echo $user['first_name']; // 'Jim'
+echo $user['address']['street']; // 'bogus'  
+echo $user['shipping_address']['city']; // 'NYC'
+```
+
+### Advanced Factory Features
+
+For more complex scenarios, you can add state manipulation with closures and other advanced patterns:
 
 Define a factory in this way:
 
@@ -77,10 +218,16 @@ class UserFactory
     
     public function setLastName(): self
     {
-        /** Closure Syntax */
+        /** Closure Syntax - access context values to create dynamic state */
         return $this->state(function ($context) {
-            return ['first_name' => $context['last_name']];
+            return ['last_name' => $context['first_name']];
         });
+    }
+    
+    /** Static factory method for fluent instantiation */
+    public static function factory(array $context = []): self
+    {
+        return new self($context);
     }
     
     /* Optionally implement for better static analysis */
@@ -100,78 +247,221 @@ echo $User['first_name']; // 'Jane'
 echo $User['last_name'];  // 'Doe'
 ```
 
-### The `set()` Method
+### Callable State (Closures)
 
-You can use the `set()` helper method to fluently modify the state of your model in a convenient way.
-
-This is a great way to modify a model without having to implement a method in the factory.
-
-```php
-$User = User::factory()
-            ->set('first_name', 'John')
-            ->set(['last_name' => 'Doe'])
-            ->set(function ($context) {
-                return ['surname' => $context['last_name']];
-            })
-            ->set('address.postal_code', '46789') // dot syntax for nested values 
-            ->make();
-
-echo $User->first_name;             // John
-echo $User->last_name;              // Doe
-echo $User->surname;                // Doe
-echo $User->address->postal_code;   // 46789
-```
-
-### The `merge()` Method
-
-Sometimes it is useful to merge new values into the current context of the factory.
-
-Use the `merge()` method to merge any new values and update the factory context.
+Use closures to create dynamic state based on the current context. This is powerful for creating values that depend on other values in the factory:
 
 ```php
 class UserFactory
 {
-    use \Zerotoprod\DataModelFactory\Factory;
+    use \Zerotoprod\Factory\Factory;
 
-    private function definition(): array
+    protected function definition(): array
     {
         return [
             'first_name' => 'John',
-            'last_name' => 'Doe',
+            'last_name' => 'N/A'
+        ];
+    }
+
+    public function setLastName(): self
+    {
+        return $this->state(function ($context) {
+            // Set last_name to the same value as first_name
+            return ['last_name' => $context['first_name']];
+        });
+    }
+}
+
+$User = UserFactory::factory()
+    ->setLastName()
+    ->make();
+
+echo $User['first_name']; // 'John'
+echo $User['last_name'];  // 'John' (copied from first_name)
+```
+
+The closure receives the current context as its parameter, allowing you to create dynamic relationships between fields.
+
+### The `set()` Method
+
+The `set()` method provides a flexible way to modify factory state without creating custom methods. It supports four different syntaxes to accommodate various use cases:
+
+#### 1. Key-Value Syntax
+Set a single field by passing the key and value as separate parameters:
+```php
+->set('first_name', 'John')
+->set(User::first_name, 'John')  // Using constants
+```
+
+#### 2. Array Syntax  
+Set multiple fields or use associative arrays:
+```php
+->set(['last_name' => 'Doe'])
+->set(['first_name' => 'Jane', 'last_name' => 'Smith'])
+```
+
+#### 3. Closure Syntax
+Use closures for dynamic values based on current context:
+```php
+->set(function ($context) {
+    return ['surname' => $context['last_name']];
+})
+```
+
+#### 4. Dot Notation Syntax
+Access and modify nested array values:
+```php
+->set('address.postal_code', '46789')
+->set('user.profile.settings.theme', 'dark')
+```
+
+#### Complete Example
+
+Here's how all four syntaxes work together:
+
+```php
+$User = UserFactory::factory()
+    ->set('first_name', 'John')                    // Key-value syntax
+    ->set(['last_name' => 'Doe'])                  // Array syntax
+    ->set(function ($context) {                    // Closure syntax
+        return ['surname' => $context['last_name']];
+    })
+    ->set('address.postal_code', '46789')          // Dot syntax for nested values
+    ->make();
+
+echo $User['first_name'];           // John
+echo $User['last_name'];            // Doe
+echo $User['surname'];              // Doe
+echo $User['address']['postal_code']; // 46789
+```
+
+### The `merge()` Method
+
+The `merge()` method allows you to merge new values directly into the factory's current context. This is useful for bulk updates or overriding multiple values at once.
+
+**Important:** `merge()` updates the context after `set()` methods have been evaluated, so closures will use the original values.
+
+```php
+class UserFactory
+{
+    use \Zerotoprod\Factory\Factory;
+
+    protected function definition(): array
+    {
+        return [
+            'first_name' => 'John',
+            'last_name' => 'N/A',
+            'address' => [
+                'postal_code' => 'default'
+            ]
         ];
     }
 }
 
 $User = UserFactory::factory()
-    ->merge(['first_name' => 'Jane'])
+    ->set('first_name', 'John')
+    ->set(['last_name' => 'Doe'])
+    ->set(function (array $context) {
+        // This closure captures 'Doe' when set() is called
+        return ['surname' => $context['last_name']]; 
+    })
+    ->set('address.postal_code', '46789')
+    ->merge(['last_name' => 'merged'])  // Override after set() calls
     ->make();
 
-echo $User->first_name; // 'Jane'
-echo $User->last_name;  // 'Doe'
+echo $User['first_name']; // 'John'
+echo $User['last_name'];  // 'merged' (from merge())
+echo $User['surname'];    // 'Doe' (from closure, before merge())
+echo $User['address']['postal_code']; // '46789'
 ```
+
+Use `merge()` when you want to:
+- Apply bulk changes to multiple fields
+- Override previously set values
+- Update context without creating new state methods
 
 ### The `context()` Method
 
-Use the `context()` method to get the context of the factory.
+Use the `context()` method to get the current context of the factory without creating the final result. This is useful for inspecting or debugging the factory state.
 
 ```php
 class UserFactory
 {
-    use \Zerotoprod\DataModelFactory\Factory;
+    use \Zerotoprod\Factory\Factory;
 
-    private function definition(): array
+    protected function definition(): array
     {
         return [
             'first_name' => 'John',
-            'last_name' => 'Doe',
+            'last_name' => 'N/A',
         ];
     }
 }
 
-$User = UserFactory::factory()->context();
+// Get context with initial values
+$context = UserFactory::factory()->context();
+echo $context['first_name']; // 'John'
+echo $context['last_name'];  // 'N/A'
+
+// Get context with overridden values
+$context = UserFactory::factory(['last_name' => 'Doe'])->context();
+echo $context['first_name']; // 'John'
+echo $context['last_name'];  // 'Doe'
+```
+
+### Context Priority
+
+Context can be provided at different stages, with later contexts taking priority:
+
+```php
+class UserFactory
+{
+    use \Zerotoprod\Factory\Factory;
+
+    protected function definition(): array
+    {
+        return [
+            'first_name' => 'John',
+            'last_name' => 'N/A',
+        ];
+    }
+}
+
+// Context in make() overrides context in factory()
+$User = UserFactory::factory(['last_name' => 'Bogus'])
+    ->make(['last_name' => 'Doe']);
 
 echo $User['first_name']; // 'John'
-echo $User['last_name'];  // 'Doe'
+echo $User['last_name'];  // 'Doe' (from make(), not 'Bogus')
+```
+
+Priority order (highest to lowest):
+1. Context passed to `make()` - **Final override at creation time**
+2. Values from `merge()` method - **Direct context updates**
+3. Context from `state()` methods - **Fluent method calls** 
+4. Context passed to `factory()` - **Initial context setup**
+5. Default values from `definition()` - **Base factory defaults**
+
+**Note:** Closures in `state()` methods are evaluated when the method is called, so they use the context available at that time, before any subsequent `merge()` operations.
+
+### The `make()` Method
+
+The `make()` method is the final step that creates your data structure. It can accept optional context that will override any previously set values:
+
+```php
+$factory = UserFactory::factory(['first_name' => 'John'])
+    ->set('last_name', 'Smith');
+
+// Create with factory/state values
+$user1 = $factory->make();
+echo $user1['first_name']; // 'John'
+echo $user1['last_name'];  // 'Smith'
+
+// Override at make time
+$user2 = $factory->make(['first_name' => 'Jane']);
+echo $user2['first_name']; // 'Jane' (overridden)
+echo $user2['last_name'];  // 'Smith' (preserved)
 ```
 
 ## Contributing
