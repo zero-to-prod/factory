@@ -17,6 +17,7 @@
 - [Introduction](#introduction)
 - [Requirements](#requirements)
 - [Installation](#installation)
+- [Documentation Publishing](#documentation-publishing)
 - [Usage](#usage)
   - [Basic Factory Pattern](#basic-factory-pattern)
   - [Model-Based Factory Pattern](#model-based-factory-pattern)
@@ -58,17 +59,12 @@ This can be useful for providing documentation for AI agents.
 This can be done using the included script:
 
 ```bash
-# Publish to default location (~/docs/zero-to-prod/factory/)
+# Publish to default location (./docs/zero-to-prod/factory)
 vendor/bin/zero-to-prod-factory
 
 # Publish to custom directory
 vendor/bin/zero-to-prod-factory /path/to/your/docs
 ```
-
-The script will:
-- Create the target directory if it doesn't exist
-- Copy the README.md file to the specified location
-- Provide confirmation when publishing is complete
 
 ## Usage
 
