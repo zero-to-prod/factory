@@ -18,6 +18,7 @@
 - [Requirements](#requirements)
 - [Installation](#installation)
 - [Documentation Publishing](#documentation-publishing)
+  - [Automatic Documentation Publishing](#automatic-documentation-publishing)
 - [Usage](#usage)
   - [Basic Factory Pattern](#basic-factory-pattern)
   - [Model-Based Factory Pattern](#model-based-factory-pattern)
@@ -64,6 +65,23 @@ vendor/bin/zero-to-prod-factory
 
 # Publish to custom directory
 vendor/bin/zero-to-prod-factory /path/to/your/docs
+```
+
+#### Automatic Documentation Publishing
+
+You can automatically publish documentation by adding the following to your `composer.json`:
+
+```json
+{
+  "scripts": {
+    "post-install-cmd": [
+      "zero-to-prod-factory"
+    ],
+    "post-update-cmd": [
+      "zero-to-prod-factory"
+    ]
+  }
+}
 ```
 
 ## Usage
