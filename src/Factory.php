@@ -102,6 +102,18 @@ trait Factory
     }
 
     /**
+     * Return the current context as json.
+     *
+     * @return false|string
+     *
+     * @link https://github.com/zero-to-prod/factory
+     */
+    public function json(int $flags = 0, int $depth = 512)
+    {
+        return json_encode($this->context, $flags, $depth);
+    }
+
+    /**
      * Instantiate a new factory instance.
      *
      * @param  array  $context
